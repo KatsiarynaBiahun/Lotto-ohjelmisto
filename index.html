@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      body {
+        background-color: whitesmoke;
+        margin-left: auto;
+        margin-right: auto;
+        font: 20px Georgia;
+        color: darkkhaki;
+      }
+      table {
+        border-collapse: collapse;
+        display: inline-block;
+      }
+      table td {
+        padding: 20px;
+        border: 1px solid darkkhaki;
+      }
+      table,
+      h1,
+      input,
+      #progressBar,
+      #output {
+        margin-left: 100px;
+        margin-top: 20px;
+      }
+      #submit,
+      #talenna,
+      #talennaCSV,
+      #file {
+        font: 26px Georgia;
+        color: darkkhaki;
+        padding: 10px;
+      }
+      #progressBar {
+        width: 50%;
+        background-color: #ddd;
+        position: relative;
+      }
+      #edistymispalkki {
+        width: 0%;
+        height: 30px;
+        background-color: darkkhaki;
+        position: relative;
+      }
+      #aika {
+        top: 50%;
+        left: 50%;
+        margin-right: -50%;
+        transform: translate(-50%, -50%);
+        font: 16px Georgia;
+        color: white;
+        position: absolute;
+      }
+      textarea {
+        margin-left: 20px;
+        font: 18px Georgia;
+        color: darkkhaki;
+      }
+    </style>
+
+    <title>Lotto</title>
+  </head>
+  <body onload="LuoTable()">
+    <h1>Lotto</h1>
+
+    <input type="file" name="inputfile" id="inputfile" accept=".txt" disabled />
+    <br />
+
+    <table id="luoTable"></table>
+
+    <textarea
+      id="textarea"
+      rows="18"
+      cols="30"
+      value=""
+      style="resize: none"
+    ></textarea>
+    <textarea
+      id="textareaTaysosumat"
+      rows="18"
+      cols="30"
+      value=""
+      style="resize: none"
+    ></textarea
+    ><br />
+    <input type="color" id="color" name="color" value="#c8cbc8" /><label
+      for="color"
+    >
+      Lottonumeroiden väri</label
+    ><br />
+    <input type="text" name="rivi" id="rivi" /><label for="rivi">
+      kuinka monta riviä arvotaan?</label
+    ><br />
+    <input
+      type="button"
+      id="submit"
+      method="submit"
+      value="Suorita lottoarvonta"
+      onclick="Arvorivit(7,1,39)"
+    />
+
+    <div id="progressBar">
+      <div id="edistymispalkki"></div>
+      <div id="aika"></div>
+    </div>
+
+    <input type="button" id="talenna" onclick="Save()" value="Talenna" />
+    <input
+      type="button"
+      id="talennaCSV"
+      onclick="SaveCSV()"
+      value="Talenna .csv-muodossa"
+    />
+
+    <script src="js/FileSaver.js"></script>
+
+    <script>
+      function LuoTable() {
+        let i = 1;
+        for (let rivi = 0; rivi < 7; rivi++) {
+          let tr = document.createElement("tr");
+          document.getElementById("luoTable").appendChild(tr);
+
+          for (let cell = 0; cell < 6; cell++) {
+            let td = document.createElement("td");
+            td.setAttribute("id", i);
+
+            if (i < 40) {
+              td.innerHTML = i;
+              td.setAttribute("onclick", "Clicked(this.id)");
+            }
+
+            tr.appendChild(td);
+            i++;
+          }
+        }
+      }
+
+      document
+        .getElementById("inputfile")
+        .addEventListener("change", function () {
+          if (Tarkista()) {
+            var fr = new FileReader();
+            fr.onload = function () {
+              // document.getElementById("output").textContent = fr.result;
+
+              let tiedostoRivi = fr.result;
+              document.getElementById("textarea").value = tiedostoRivi;
+
+              //toinen logikka, ei samanlainen kuin Talenna
+              let tieto = [];
+              tieto = tiedostoRivi.split("\n");
+
+              let ar = [];
+              for (let i = 0; i < tieto.length; i++) {
+                let rr = tieto[i].split(",").map(Number);
+                ar.push(rr);
+              }
+
+              let taysosumat = [0, 0, 0, 0, 0, 0, 0, 0];
+              for (let riv = 0; riv < ar.length; riv++) {
+                let taysLuku = 0;
+                for (let luk = 0; luk < 7; luk++) {
+                  if (numerot.includes(ar[riv][luk])) {
+                    taysLuku++;
+                  }
+                }
+                if (taysLuku === 0) {
+                  taysosumat[7]++;
+                } else if (taysLuku === 1) {
+                  taysosumat[6]++;
+                } else if (taysLuku === 2) {
+                  taysosumat[5]++;
+                } else if (taysLuku === 3) {
+                  taysosumat[4]++;
+                } else if (taysLuku === 4) {
+                  taysosumat[3]++;
+                } else if (taysLuku === 5) {
+                  taysosumat[2]++;
+                } else if (taysLuku === 6) {
+                  taysosumat[1]++;
+                } else if (taysLuku === 7) {
+                  taysosumat[0]++;
+                }
+              }
+              document.getElementById(
+                "textareaTaysosumat"
+              ).value = `täysosumat: \n 7 oikein ${taysosumat[0]} kpl \n 6 oikein ${taysosumat[1]} kpl \n 5 oikein ${taysosumat[2]} kpl \n 4 oikein ${taysosumat[3]} kpl \n 3 oikein ${taysosumat[4]} kpl \n 2 oikein ${taysosumat[5]} kpl \n 1 oikein ${taysosumat[6]} kpl \n 0 oikein ${taysosumat[7]} kpl `;
+            };
+            fr.readAsText(this.files[0]);
+          }
+        });
+
+      function Save() {
+        if (Tarkista()) {
+          var blob = new Blob([riviInArea], {
+            type: "text/plain;charset=utf-8",
+          });
+          saveAs(blob, "Talenna.txt");
+        }
+      }
+
+      function SaveCSV() {
+        if (Tarkista()) {
+          var blob = new Blob([riviInArea], { type: "csv;charset=utf-8" });
+          saveAs(blob, "Talenna.csv");
+        }
+      }
+
+      let numerot = [];
+      let maara = 0;
+
+      function Clicked(id) {
+        let p = parseInt(document.getElementById(id).innerText);
+        if (maara < 7) {
+          if (numerot.includes(p)) {
+            let ind = numerot.indexOf(p);
+            numerot.splice(ind, 1);
+            document.getElementById(id).style.backgroundColor = "";
+            maara--;
+          } else {
+            document.getElementById(id).style.backgroundColor =
+              document.getElementById("color").value;
+            numerot.push(p);
+            maara++;
+          }
+        }
+        if (maara === 7) {
+          document.getElementById("inputfile").disabled = false;
+        }
+      }
+
+      function Tarkista() {
+        if (maara !== 7) {
+          alert("Valitse seitsemän soluja");
+          return false;
+        } else {
+          return true;
+        }
+      }
+
+      function ProgressBar() {
+        let elem = document.getElementById("edistymispalkki");
+        let numberOfWidth = 1;
+        let stopInterval = setInterval(frame, 10);
+
+        function frame() {
+          if (numberOfWidth >= 100) {
+            clearInterval(stopInterval);
+          } else {
+            numberOfWidth++;
+            elem.style.width = numberOfWidth + "%";
+          }
+        }
+      }
+
+      function TarkastukseenAika(t0, t1) {
+        document.getElementById(
+          "aika"
+        ).innerHTML = `Tarkastukseen kuluneen aika: ${t1 - t0} millisekuntia.`;
+      }
+
+      //tulosta textArea:an
+      let riviInArea = "";
+
+      function Arvorivit(numeroidenmaara, alin, ylin) {
+        let rivi = document.getElementById("rivi").value;
+        if (rivi <= 0 || isNaN(rivi)) {
+          alert("Rivin määrä pitäisi olla lukuna.");
+          document.getElementById("rivi").value = "";
+          return;
+        }
+
+        if (Tarkista()) {
+          const t0 = performance.now();
+          //joka arrayRivi kirjoitetaan arrayTulos:in
+          let arrayTulos = [];
+          //laskea taysosumat
+          let taysosumat = [0, 0, 0, 0, 0, 0, 0, 0];
+          for (let rivinMaara = 0; rivinMaara < rivi; rivinMaara++) {
+            //joka rivi kirjoitetaan arrayRivi:in
+            let arrayRivi = [];
+            // samalainen luku arrayRivilla
+            let taysLuku = 0;
+            for (let i = 0; i < numeroidenmaara; i++) {
+              // The Math.random() function returns a floating-point,
+              //pseudo-random number in the range 0 to less than 1 (inclusive of 0, but not 1)
+              let arvottuLuku = Math.floor(Math.random() * ylin) + 1;
+              //tarkistus jotta array:ssa ei toista lukuja
+              if (arrayRivi.includes(arvottuLuku)) {
+                i--;
+                //console.log("i-- ja " + arrayRivi + " ja " + arvottuLuku);
+              } else {
+                arrayRivi.push(arvottuLuku);
+              }
+
+              if (numerot.includes(arvottuLuku)) {
+                //document.getElementById(numerot[i]).style.backgroundColor = "red";
+                taysLuku++;
+              }
+            }
+            if (taysLuku === 0) {
+              taysosumat[7]++;
+            } else if (taysLuku === 1) {
+              taysosumat[6]++;
+            } else if (taysLuku === 2) {
+              taysosumat[5]++;
+            } else if (taysLuku === 3) {
+              taysosumat[4]++;
+            } else if (taysLuku === 4) {
+              taysosumat[3]++;
+            } else if (taysLuku === 5) {
+              taysosumat[2]++;
+            } else if (taysLuku === 6) {
+              taysosumat[1]++;
+            } else if (taysLuku === 7) {
+              taysosumat[0]++;
+            }
+
+            arrayTulos.push(arrayRivi);
+          }
+
+          for (let a = 0; a < arrayTulos.length; a++) {
+            if (riviInArea === "") {
+              riviInArea += arrayTulos[a];
+            } else {
+              riviInArea += "\n" + arrayTulos[a];
+            }
+          }
+
+          document.getElementById("textarea").value = riviInArea;
+
+          const t1 = performance.now();
+
+          ProgressBar();
+
+          //tulosta täysosumat 2.textArea:an
+          document.getElementById(
+            "textareaTaysosumat"
+          ).value = `täysosumat: \n 7 oikein ${taysosumat[0]} kpl \n 6 oikein ${taysosumat[1]} kpl \n 5 oikein ${taysosumat[2]} kpl \n 4 oikein ${taysosumat[3]} kpl \n 3 oikein ${taysosumat[4]} kpl \n 2 oikein ${taysosumat[5]} kpl \n 1 oikein ${taysosumat[6]} kpl \n 0 oikein ${taysosumat[7]} kpl `;
+
+          TarkastukseenAika(t0, t1);
+        }
+      }
+    </script>
+  </body>
+</html>
